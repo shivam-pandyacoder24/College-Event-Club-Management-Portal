@@ -1,0 +1,11 @@
+{
+  "name": "college-event-club-management-portal",
+  "version": "1.0.0",
+  "description": "A college portal for discovering events, joining clubs, registering and waiting lists. Built on hand-written data structures.",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test",
+    "start": "python3 -m http.server 8000"
+  }
+}

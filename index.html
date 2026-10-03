@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Noticeboard: college events and clubs</title>
+  <meta name="description" content="A college portal for finding events, joining clubs, registering and waiting lists. Every feature runs on a data structure written by hand.">
+  <meta name="theme-color" content="#171a4d">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="#events">Noticeboard</a>
+      <nav class="main-nav" aria-label="Main">
+        <a href="#events" data-nav="events">Events</a>
+        <a href="#clubs" data-nav="clubs">Clubs</a>
+        <a href="#registrations" data-nav="registrations">My registrations <span class="main-nav__count" id="nav-count"></span></a>
+        <a href="#connections" data-nav="connections">Connections</a>
+        <a href="#structures" data-nav="structures">Data structures</a>
+      </nav>
+      <button class="who" type="button" data-action="open-student">
+        <span class="visually-hidden">Switch student. Signed in as</span>
+        <span class="who__name" id="who-name"></span>
+        <span class="who__id" id="who-id"></span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <!-- ============================== EVENTS ============================== -->
+    <section class="view" data-view="events" aria-labelledby="events-title">
+      <header class="view-head">
+        <div class="view-head__inner">
+          <h1 id="events-title">What’s on</h1>
+          <p class="view-head__lead" id="events-lead"></p>
+        </div>
+      </header>
+
+      <div class="page events-layout">
+        <aside class="sidebar" aria-label="Browse and find">
+          <div class="categories" id="categories" data-open="false">
+            <button class="categories__toggle" id="categories-toggle" type="button" data-action="toggle-categories" aria-expanded="false" aria-controls="category-tree">
+              <span>Category</span> <strong id="category-current"></strong>
+            </button>
+            <h2 class="sidebar__title">Categories</h2>
+            <ul class="tree" id="category-tree"></ul>
+          </div>
+
+          <form class="number-finder" id="number-form" novalidate>
+            <label class="sidebar__title" for="number-input">Find by event number</label>
+            <div class="number-finder__row">
+              <input id="number-input" type="text" inputmode="numeric" maxlength="4" placeholder="512" autocomplete="off">
+              <button class="button button--quiet" type="submit">Find</button>
+            </div>
+            <p class="number-finder__result" id="number-result" role="status"></p>
+          </form>
+
+          <section class="recent" aria-labelledby="recent-title">
+            <h2 class="sidebar__title" id="recent-title">Recently viewed</h2>
+            <div id="recent-list"></div>
+          </section>
+        </aside>
+
+        <div class="events-main">
+          <form class="toolbar" id="events-toolbar" role="search">
+            <div class="field field--grow">
+              <label for="search-input">Search events and clubs</label>
+              <input id="search-input" type="search" placeholder="Try workshop, quiz or amphitheatre" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="when-select">When</label>
+              <select id="when-select">
+                <option value="any">Any date</option>
+                <option value="week">Next 7 days</option>
+                <option value="fortnight">Next 14 days</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="sort-select">Sort by</label>
+              <select id="sort-select">
+                <option value="date">Date</option>
+                <option value="popular">Most popular</option>
+                <option value="category">Category</option>
+                <option value="name">Name</option>
+              </select>
+            </div>
+          </form>
+
+          <div id="events-results"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== CLUBS =============================== -->
+    <section class="view" data-view="clubs" aria-labelledby="clubs-title" hidden>
+      <header class="view-head">
+        <div class="view-head__inner">
+          <h1 id="clubs-title">Clubs</h1>
+          <p class="view-head__lead" id="clubs-lead"></p>
+        </div>
+      </header>
+
+      <div class="page">
+        <form class="toolbar" id="club-search-form" role="search">
+          <div class="field field--grow">
+            <label for="club-search">Search clubs</label>
+            <input id="club-search" type="search" placeholder="Try music, robots or debate" autocomplete="off">
+          </div>
+        </form>
+        <div id="clubs-results"></div>
+      </div>
+    </section>
+
+    <!-- ============================= ONE CLUB ============================= -->
+    <section class="view" data-view="club" aria-labelledby="club-title" hidden>
+      <div id="club-page"></div>
+    </section>
+
+    <!-- ========================= MY REGISTRATIONS ========================= -->
+    <section class="view" data-view="registrations" aria-labelledby="registrations-title" hidden>
+      <header class="view-head">
+        <div class="view-head__inner">
+          <h1 id="registrations-title">My registrations</h1>
+          <p class="view-head__lead" id="registrations-lead"></p>
+        </div>
+      </header>
+
+      <div class="page registrations-layout">
+        <div class="registrations-main" id="registrations-main"></div>
+        <aside class="registrations-side" id="registrations-side" aria-label="Undo and suggestions"></aside>
+      </div>
+    </section>
+
+    <!-- ============================ CONNECTIONS =========================== -->
+    <section class="view" data-view="connections" aria-labelledby="connections-title" hidden>
+      <header class="view-head">
+        <div class="view-head__inner">
+          <h1 id="connections-title">Connections</h1>
+          <p class="view-head__lead">Every club, event and student is a point in one graph. See how any two are linked, then walk from one to the next.</p>
+        </div>
+      </header>
+
+      <div class="page">
+        <section class="block" aria-labelledby="connect-title">
+          <h2 id="connect-title">How are they connected?</h2>
+          <form class="toolbar" id="connect-form">
+            <div class="field field--grow">
+              <label for="connect-from">From</label>
+              <select id="connect-from"></select>
+            </div>
+            <div class="field field--grow">
+              <label for="connect-to">To</label>
+              <select id="connect-to"></select>
+            </div>
+          </form>
+          <div id="connect-result" aria-live="polite"></div>
+        </section>
+
+        <section class="block" aria-labelledby="explore-title">
+          <h2 id="explore-title" tabindex="-1">Walk the graph</h2>
+          <p class="section-lead">Choose a starting point. Everything listed is one step away, and pressing a name moves you there.</p>
+          <div class="toolbar">
+            <div class="field field--grow">
+              <label for="explore-node">Start from</label>
+              <select id="explore-node"></select>
+            </div>
+          </div>
+          <div class="explore" id="explore-result" aria-live="polite"></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ========================== DATA STRUCTURES ========================= -->
+    <section class="view" data-view="structures" aria-labelledby="structures-title" hidden>
+      <header class="view-head">
+        <div class="view-head__inner">
+          <h1 id="structures-title">Data structures</h1>
+          <p class="view-head__lead">Ten topics, each doing a real job on this site. Every structure is written by hand, and the panels show what each one holds right now.</p>
+        </div>
+      </header>
+
+      <div class="page">
+        <nav class="topic-links" aria-label="Topics on this page">
+          <button type="button" data-action="jump" data-target="topic-array">Array</button>
+          <button type="button" data-action="jump" data-target="topic-search">Searching</button>
+          <button type="button" data-action="jump" data-target="topic-sort">Sorting</button>
+          <button type="button" data-action="jump" data-target="topic-list">Linked list</button>
+          <button type="button" data-action="jump" data-target="topic-stack">Stack</button>
+          <button type="button" data-action="jump" data-target="topic-queue">Queue</button>
+          <button type="button" data-action="jump" data-target="topic-tree">Tree</button>
+          <button type="button" data-action="jump" data-target="topic-bst">Binary search tree</button>
+          <button type="button" data-action="jump" data-target="topic-graph">Graph</button>
+          <button type="button" data-action="jump" data-target="topic-hash">Hashing</button>
+        </nav>
+
+        <article class="topic" id="topic-array" tabindex="-1">
+          <div class="topic__text">
+            <h2>Array</h2>
+            <p class="topic__job">Holds the event information</p>
+            <p>Every event is one element of a single array. The hash table and the search tree do not store events of their own. They store positions in this array, and the array holds the details.</p>
+            <p class="topic__cost">Read by position: O(1) <a href="js/app/portal.js">js/app/portal.js</a></p>
+          </div>
+          <div class="topic__live" id="live-array"></div>
+        </article>
+
+        <article class="topic" id="topic-search" tabindex="-1">
+          <div class="topic__text">
+            <h2>Searching</h2>
+            <p class="topic__job">Runs the search box and the date filter</p>
+            <p>The search box uses linear search, because a word can match an event’s name, club, venue or tags, and those are in no order. The date filter uses binary search on the events sorted by date: one search finds where the range starts, another finds where it ends.</p>
+            <p class="topic__cost">Linear: O(n). Binary: O(log n) <a href="js/dsa/search.js">js/dsa/search.js</a></p>
+          </div>
+          <div class="topic__panel">
+            <form class="try">
+              <label for="try-word">Search for a word</label>
+              <input id="try-word" type="text" value="workshop" autocomplete="off">
+            </form>
+            <div class="topic__live" id="live-search" aria-live="polite"></div>
+          </div>
+        </article>
+
+        <article class="topic" id="topic-sort" tabindex="-1">
+          <div class="topic__text">
+            <h2>Sorting</h2>
+            <p class="topic__job">Orders the events</p>
+            <p>Merge sort handles date, popularity and category. It is stable, so events that tie stay in date order. Quick sort handles names, which never tie.</p>
+            <p class="topic__cost">Both: O(n log n) on average <a href="js/dsa/sort.js">js/dsa/sort.js</a></p>
+          </div>
+          <div class="topic__live" id="live-sort"></div>
+        </article>
+
+        <article class="topic" id="topic-list" tabindex="-1">
+          <div class="topic__text">
+            <h2>Linked list</h2>
+            <p class="topic__job">Keeps each club’s members</p>
+            <p>A club’s members are a singly linked list, in the order they joined. Joining links a new node after the tail. Leaving unlinks one node by pointing the node before it at the node after it.</p>
+            <p class="topic__cost">Add at tail: O(1). Remove: O(n) <a href="js/dsa/linked-list.js">js/dsa/linked-list.js</a></p>
+          </div>
+          <div class="topic__panel">
+            <form class="try">
+              <label for="list-club">Club</label>
+              <select id="list-club"></select>
+            </form>
+            <div class="topic__live" id="live-list"></div>
+          </div>
+        </article>
+
+        <article class="topic" id="topic-stack" tabindex="-1">
+          <div class="topic__text">
+            <h2>Stack</h2>
+            <p class="topic__job">Powers Undo and Recently viewed</p>
+            <p>Whatever happened last is on top. Undo pops the top action and reverses it, so actions are undone in the reverse of the order they happened. Opening an event pushes it onto the recently viewed stack.</p>
+            <p class="topic__cost">Push and pop: O(1) <a href="js/dsa/stack.js">js/dsa/stack.js</a></p>
+          </div>
+          <div class="topic__live" id="live-stack"></div>
+        </article>
+
+        <article class="topic" id="topic-queue" tabindex="-1">
+          <div class="topic__text">
+            <h2>Queue</h2>
+            <p class="topic__job">Runs each waiting list</p>
+            <p>When an event is full, a student who registers joins the rear of its queue. When someone cancels, the student at the front is dequeued and gets the seat. Nobody can be skipped.</p>
+            <p class="topic__cost">Enqueue and dequeue: O(1) <a href="js/dsa/queue.js">js/dsa/queue.js</a></p>
+          </div>
+          <div class="topic__panel">
+            <form class="try">
+              <label for="queue-event">Full event</label>
+              <select id="queue-event"></select>
+            </form>
+            <div class="topic__live" id="live-queue"></div>
+          </div>
+        </article>
+
+        <article class="topic" id="topic-tree" tabindex="-1">
+          <div class="topic__text">
+            <h2>Tree</h2>
+            <p class="topic__job">Organises the event categories</p>
+            <p>Categories form a general tree, where a node can have any number of children. Choosing a category shows every event in its subtree, and the breadcrumb is the path from the root.</p>
+            <p class="topic__cost">Find a category: O(n) <a href="js/dsa/category-tree.js">js/dsa/category-tree.js</a></p>
+          </div>
+          <div class="topic__live" id="live-tree"></div>
+        </article>
+
+        <article class="topic" id="topic-bst" tabindex="-1">
+          <div class="topic__text">
+            <h2>Binary search tree</h2>
+            <p class="topic__job">Finds events by number</p>
+            <p>Event numbers sit in a binary search tree: smaller to the left, larger to the right. A lookup follows one branch down. Because the tree keeps the numbers in order, it can also name the closest numbers when the one you typed does not exist.</p>
+            <p class="topic__cost">Lookup: O(log n) <a href="js/dsa/bst.js">js/dsa/bst.js</a></p>
+          </div>
+          <div class="topic__panel">
+            <form class="try">
+              <label for="try-number">Look up an event number</label>
+              <input id="try-number" type="text" inputmode="numeric" maxlength="4" value="407" autocomplete="off">
+            </form>
+            <div class="topic__live" id="live-bst" aria-live="polite"></div>
+          </div>
+        </article>
+
+        <article class="topic" id="topic-graph" tabindex="-1">
+          <div class="topic__text">
+            <h2>Graph</h2>
+            <p class="topic__job">Connects clubs, events and students</p>
+            <p>Each club, event and student is a node, and each relationship is a labelled edge. Depth-first search follows a club’s events to build its trail. Breadth-first search finds the shortest chain between any two nodes. Suggestions come from walking a few edges out from you.</p>
+            <p class="topic__cost">Both searches: O(nodes + edges) <a href="js/dsa/graph.js">js/dsa/graph.js</a></p>
+          </div>
+          <div class="topic__live" id="live-graph"></div>
+        </article>
+
+        <article class="topic" id="topic-hash" tabindex="-1">
+          <div class="topic__text">
+            <h2>Hashing</h2>
+            <p class="topic__job">Looks up students and events by ID</p>
+            <p>A hash function turns a student ID into a bucket number, so signing in checks one short chain instead of every student. Keys that land in the same bucket are chained together, and the table doubles its buckets when it gets crowded.</p>
+            <p class="topic__cost">Lookup: O(1) on average <a href="js/dsa/hash-table.js">js/dsa/hash-table.js</a></p>
+          </div>
+          <div class="topic__panel">
+            <form class="try">
+              <label for="try-student">Look up a student ID</label>
+              <input id="try-student" type="text" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false">
+            </form>
+            <div class="topic__live" id="live-hash" aria-live="polite"></div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p>Noticeboard is a data structures and algorithms project by Shivam A Pandya. The clubs, events and students are made up, and what you do here is saved only in this browser.</p>
+      <p class="site-footer__links">
+        <a href="https://github.com/shivam-pandyacoder24/College-Event-Club-Management-Portal">Source on GitHub</a>
+        <button type="button" class="link-button" data-action="reset-data">Reset sample data</button>
+      </p>
+    </div>
+  </footer>
+
+  <!-- One event, opened from any ticket. Filled in by js/ui/event-sheet.js -->
+  <dialog class="sheet" id="event-dialog" aria-labelledby="event-title">
+    <form method="dialog" class="sheet__close">
+      <button type="submit" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </button>
+    </form>
+    <div id="event-sheet"></div>
+  </dialog>
+
+  <!-- Switch student -->
+  <dialog class="sheet sheet--narrow" id="student-dialog" aria-labelledby="student-title">
+    <form method="dialog" class="sheet__close">
+      <button type="submit" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </button>
+    </form>
+    <div class="sheet__content">
+      <h2 id="student-title">Switch student</h2>
+      <p class="quiet">You are signed in as <strong id="student-current"></strong>.</p>
+
+      <form class="stack-form" id="sign-in-form" novalidate>
+        <label for="sign-in-id">Student ID</label>
+        <div class="stack-form__row">
+          <input id="sign-in-id" type="text" maxlength="9" placeholder="CS24014" autocomplete="off" autocapitalize="characters" spellcheck="false">
+          <button class="button" type="submit">Sign in</button>
+        </div>
+        <p class="form-note" id="sign-in-note" role="alert"></p>
+      </form>
+
+      <p class="sheet__label">Or sign in as</p>
+      <div class="pills" id="sample-ids"></div>
+
+      <form class="stack-form stack-form--boxed" id="add-student-form" novalidate>
+        <h3>Add yourself as a new student</h3>
+        <label for="new-student-name">Name</label>
+        <input id="new-student-name" type="text" maxlength="40" autocomplete="name">
+        <label for="new-student-id">Student ID <span class="hint">Two letters and five digits, such as CS25104</span></label>
+        <input id="new-student-id" type="text" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <p class="form-note" id="add-student-note" role="alert"></p>
+        <button class="button" type="submit">Add student and sign in</button>
+      </form>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast">
+    <p id="toast-text" role="status" tabindex="-1"></p>
+    <button type="button" class="toast__undo" id="toast-undo" data-action="undo" hidden>Undo</button>
+  </div>
+
+  <!-- Data structures and algorithms -->
+  <script src="js/dsa/search.js"></script>
+  <script src="js/dsa/sort.js"></script>
+  <script src="js/dsa/linked-list.js"></script>
+  <script src="js/dsa/stack.js"></script>
+  <script src="js/dsa/queue.js"></script>
+  <script src="js/dsa/category-tree.js"></script>
+  <script src="js/dsa/bst.js"></script>
+  <script src="js/dsa/hash-table.js"></script>
+  <script src="js/dsa/graph.js"></script>
+  <!-- Sample data, then the portal that puts the structures to work -->
+  <script src="js/data/campus.js"></script>
+  <script src="js/app/portal.js"></script>
+  <!-- The pages -->
+  <script src="js/ui/dom.js"></script>
+  <script src="js/ui/tickets.js"></script>
+  <script src="js/ui/event-sheet.js"></script>
+  <script src="js/ui/events-view.js"></script>
+  <script src="js/ui/clubs-view.js"></script>
+  <script src="js/ui/registrations-view.js"></script>
+  <script src="js/ui/connections-view.js"></script>
+  <script src="js/ui/structures-view.js"></script>
+  <script src="js/ui/main.js"></script>
+</body>
+</html>
